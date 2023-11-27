@@ -62,6 +62,7 @@ void MatrixMult(float *M1, float *M2, float *Mout, int n){
 
 
 int main(){
+    //Dans le CPU
     float *M;
     float *M2;
     float *Mout;
@@ -80,5 +81,33 @@ int main(){
 
     MatrixAdd(M, M2, Mout, n, p);
     MatrixPrint(Mout,n,p);
+
+    MatrixMult(M,M2,Mout,n);
+    MatrixPrint(Mout,n,p);
+
+    //dans le GPU
+    
+    float *d_M, *d_M2, *d_Mout;
+
+    // Allocation des mémoires des matrices pour cuda
+    cudaMalloc((void**)&d_M, sizeof(float) * n * p);
+    cudaMalloc((void**)&d_M2, sizeof(float) * n * p);
+    cudaMalloc((void**)&d_Mout, sizeof(float) * n * p);
+
+    cudaMemcpy(d_M, M, sizeof(float) * n * p, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_M2, M2, sizeof(float) * n * p, cudaMemcpyHostToDevice);
+
+    dim3 block_size(n, p);
+    dim3 grid_size(1, 1);
+
+    // Addition sur GPU
+    cudaMatrixAdd<<<grid_size, block_size>>>(d_M, d_M2, d_Mout, n, p);
+    cudaDeviceSynchronize();
+    
+    // Copie du résultat sur CPU
+    cudaMemcpy(Mout, d_Mout, sizeof(float) * n * p, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+    
+    MatrixPrint(Mout, n, p);
 }
 
