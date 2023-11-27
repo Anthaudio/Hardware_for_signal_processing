@@ -32,8 +32,33 @@ void MatrixAdd(float *M1, float *M2, float *Mout, int n, int p){
 }
 
 __global__ void cudaMatrixAdd(float *M1, float *M2, float *Mout, int n, int p){
-
+    
+    printf("Addition from the GPU...\n\n");
+    
+    int lig = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (lig < n && col < p){
+        Mout[lig * p + col] = M1[lig * p + col] + M2[lig * p + col];
+    }
 }
+
+void MatrixMult(float *M1, float *M2, float *Mout, int n){
+    
+    printf("Multiplication from the CPU...\n\n");
+    
+    for (int lig = 0; lig < n; lig++){
+        for (int col = 0; col < n; col++){
+            float s = 0.0f;
+            for (int i = 0; i < n; i++) {
+                s += M1[lig * n + i] * M2[i * n + col];
+            }
+            Mout[lig * n + col] = s;
+        }
+    }
+}
+
+
 
 
 int main(){
