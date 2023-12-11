@@ -3,7 +3,7 @@
 Anthony Gallien et Maéva Bachelard
 
 
-*** LES OBJECTIFS DE CE PROJET ***
+**>>>>>>> LES OBJECTIFS DE CE PROJET <<<<<<<**
 
 **Apprendre à utiliser CUDA**
 Ce premier objectif est essentiel pour tout projet utilisant CUDA. Il s'agit d'apprendre les bases de la programmation GPU, notamment la syntaxe CUDA, les concepts de parallélisme et les différentes techniques d'accélération.
