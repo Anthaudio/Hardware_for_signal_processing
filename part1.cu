@@ -5,7 +5,7 @@
 //on crée une fonction qui initialise une matrice de taille n*p
 //avec des valeurs aléatoires comprises entre -1 et 1
 
-#define PRINT 1
+#define PRINT 0
 
 void MatrixInit(float *M, int n, int p) {
     float rd_val;
@@ -81,8 +81,8 @@ int main(){
     float *M2;
     float *Mout;
 
-    int n = 1024;
-    int p = 1024;
+    int n = 2;
+    int p = 2;
 
     int N = n*p;
 
@@ -91,17 +91,17 @@ int main(){
     Mout = (float*)malloc(n*p*sizeof(float));
 
     MatrixInit(M,n,p);
-    MatrixPrint(M,n,p);
+    //MatrixPrint(M,n,p);
     MatrixInit(M2,n,p);
-    MatrixPrint(M2,n,p);
+    //MatrixPrint(M2,n,p);
 
     start_clock_CPU = clock();
     MatrixAdd(M, M2, Mout, n, p);
     end_clock_CPU = clock();
-    MatrixPrint(Mout,n,p);
+    //MatrixPrint(Mout,n,p);
 
     MatrixMult(M,M2,Mout,n);
-    MatrixPrint(Mout,n,p);
+    //MatrixPrint(Mout,n,p);
 
     //dans le GPU
     
@@ -115,8 +115,8 @@ int main(){
     cudaMemcpy(d_M, M, sizeof(float) * n * p, cudaMemcpyHostToDevice);
     cudaMemcpy(d_M2, M2, sizeof(float) * n * p, cudaMemcpyHostToDevice);
 
-    dim3 grid_size(n, 1, 1);
-    dim3 block_size(p, 1, 1);
+    dim3 grid_size(n, n, 1);
+    dim3 block_size(p, p, 1);
     
 
     // Addition sur GPU
@@ -124,9 +124,17 @@ int main(){
 
     // Copie du résultat sur CPU
     cudaMemcpy(Mout, d_Mout, sizeof(float) * n * p, cudaMemcpyDeviceToHost);
-    MatrixPrint(Mout, n, p);
+    //MatrixPrint(Mout, n, p);
 
     cudaMatrixMult<<<grid_size, block_size>>>(d_M, d_M2, d_Mout, n, p);
+
+    cudaMemcpy(M, d_M, sizeof(float) * n * p, cudaMemcpyDeviceToHost);
+    cudaMemcpy(M2, d_M2, sizeof(float) * n * p, cudaMemcpyDeviceToHost);
+    cudaMemcpy(Mout, d_Mout, sizeof(float) * n * p, cudaMemcpyDeviceToHost);
+
+    MatrixPrint(M, n, p);
+    MatrixPrint(M2, n, p);
+    MatrixPrint(Mout, n, p);
 
     CPU_time = (double)(end_clock_CPU - start_clock_CPU)/CLOCKS_PER_SEC;
 
