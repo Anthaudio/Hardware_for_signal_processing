@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
+#include <math.h>
+
+
+
 
 // Layer 1 
 /*
@@ -76,60 +80,15 @@ void MatrixPrint3D(float *M, int n, int p, int l){
 // Layer 2
 
 /*
- La fonction suivante effectue la convolution de la matrice M avec nb_kernel noyaux de convolution de taille kernel_size x kernel_size.
-  Paramètres :
-    - M_ligne : nombre de lignes de la matrice M.
-    - M_colonne : nombre de colonnes de la matrice M.
-    - M : pointeur vers la matrice d'entrée.
-    - kernel_size : nombre de lignes et de colonnes du kernel (noyau de convolution).
-    - nb_kernel : nombre de kernels (noyaux de convolution).
-    - kernel : pointeur vers la matrice correspondant aux kernels.
-    - Mout_ligne : nombre de lignes de la matrice de sortie Mout.
-    - Mout_colonne : nombre de colonnes de la matrice de sortie Mout.
-    - Mout : pointeur vers la matrice de sortie Mout.
- Mout_ligne = (M_ligne - kernel_size) + 1.
+La fonction cudaConv2D ci-dessous réalise la convolution de la matrice M avec nb_kernel noyaux de convolution, chacun ayant une taille de kernel_size x kernel_size. Les paramètres de la fonction sont les suivants :
+
+    -input: pointeur vers la matrice d'entrée M.
+    -kernels: pointeur vers la matrice correspondant aux noyaux de convolution.
+    -output: pointeur vers la matrice de sortie Mout.
+    -inputwidth: nombre de colonnes de la matrice d'entrée.
+    -kernelSize: nombre de lignes et de colonnes du noyau de convolution.
  */
 
-/*__global__ void cudaConv2D(float* M, float* kernel, float* Mout,
-                        int M_ligne, int M_colonne, int kernel_size,
-                        int nb_kernel, int Mout_ligne, int Mout_colonne) {
-
-  // Get thread indices
-  int lig = blockIdx.x;
-  int col = threadIdx.x;
-
-  // Check if the thread corresponds to a valid output pixel
-  if (lig < Mout_ligne && col < Mout_colonne) {
-    // Compute the offset of the current output pixel in the output matrix
-    int Mout_offset = lig * Mout_colonne + col;
-
-    // Initialize the summation variable
-    float sum = 0.0f;
-
-    // Convolve the input matrix and the kernel
-    for (int kernel_lig = 0; kernel_lig < kernel_size; kernel_lig++) {
-      for (int kernel_col = 0; kernel_col < kernel_size; kernel_col++) {
-        for (int n_k = 0; n_k < nb_kernel; n_k++) {
-          // Calculate the index of the corresponding input pixel with padding
-          int input_row = lig + kernel_lig - kernel_size / 2;
-          int input_col = col + kernel_col - kernel_size / 2;
-
-          // Check if the indices are within bounds
-          if (input_row >= 0 && input_row < M_ligne && input_col >= 0 && input_col < M_colonne) {
-            int input_offset = input_row * M_colonne + input_col + n_k * M_ligne * M_colonne;
-
-            // Calculate the dot product
-            float product = M[input_offset] * kernel[kernel_lig * kernel_size + kernel_col + n_k * nb_kernel];
-            sum += product;
-          }
-        }
-      }
-    }
-
-    // Store the convolution result in the output matrix
-    Mout[Mout_offset] = sum;
-  }
-}*/
 
 __global__ void cudaConv2D(float *input, float *kernels, float *output, int inputwidth, int kernelSize) {
     int n = gridDim.x;
@@ -215,17 +174,11 @@ __global__ void cudaMeanPool(float* M, float* Mout, int M_ligne, int M_colonne, 
  */
 __device__ void activation_tanh(float* M, int M_ligne, int M_colonne, int M_prof){
     
-    int lig = blockIdx.y * blockDim.y + threadIdx.y;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    if (lig < M_ligne && col < M_colonne){
-        
-        int tot_M = M_ligne * M_colonne;
-        
-        for (int n_prof = 0; n_prof < M_prof; n_prof++){
-            M[lig * M_colonne + col + n_prof * tot_M] = tanh(M[lig * M_colonne + col + n_prof * tot_M]);
-        }
-    }
+    int off_z = M_ligne * M_colonne;
+
+    int index = blockIdx.z * off_z + blockIdx.x * M_colonne + blockIdx.y;
+
+    M[index] = tanh(M[index]);
 }
 
 
@@ -245,31 +198,41 @@ __global__ void cudaTanh(float* M, int M_ligne, int M_colonne, int M_prof) {
 
 
 int main(){
+    int N = 32;
+    int K = 5;
+    int D1 = 6;
+
+    int N1 = N - K + 1;
+    int N2 = N1 / 2;
+
+    printf("N=%d K=%d D1=%d N1=%d N2=%d", N, K, D1, N1, N2);
+
+
     // Dans le CPU
     
     // Création de l'image d'entrée à convoluer
     float *raw_data;    
-    raw_data = (float*)malloc(32 * 32 * 1 * sizeof(float));
+    raw_data = (float*)malloc(N * N * 1 * sizeof(float));
     
-    MatrixInit(raw_data, 32, 32, 1, 1);
+    MatrixInit(raw_data, N, N, 1, 1);
     
     // Création de la sortie de la conv2D
     float *C1_data;    
-    C1_data = (float*)malloc(28 * 28 * 6 * sizeof(float));
+    C1_data = (float*)malloc(N1 * N1 * D1 * sizeof(float));
     
-    MatrixInit(C1_data, 28, 28, 6, 0);
+    MatrixInit(C1_data, N1, N1, D1, 0);
     
     // Création de la sortie du sous-échantillonnage
     float *S1_data;    
-    S1_data = (float*)malloc(14 * 14 * 6 * sizeof(float));
+    S1_data = (float*)malloc(N2 * N2 * D1 * sizeof(float));
     
-    MatrixInit(S1_data, 14, 14, 6, 0);
+    MatrixInit(S1_data, N2, N2, D1, 0);
     
 
     float *C1_kernel;    
-    C1_kernel = (float*)malloc(5 * 5 * 6 * sizeof(float));
+    C1_kernel = (float*)malloc(K * K * D1 * sizeof(float));
     
-    MatrixInit(C1_kernel, 5, 5, 6, 1);
+    MatrixInit(C1_kernel, K, K, D1, 1);
 
     
     // Dans le GPU
@@ -278,46 +241,46 @@ int main(){
     float *d_raw_data, *d_C1_data, *d_C1_kernel, *d_S1_data;
     
     // Allocation des mémoires des matrices pour cuda
-    cudaMalloc((void**)&d_raw_data, sizeof(float) * 32 * 32 * 1);
-    cudaMalloc((void**)&d_C1_kernel, sizeof(float) * 5 * 5 * 6);
-    cudaMalloc((void**)&d_C1_data, sizeof(float) * 28 * 28 * 6);
-    cudaMalloc((void**)&d_S1_data, sizeof(float) * 14 * 14 * 6);
+    cudaMalloc((void**)&d_raw_data, sizeof(float) * N * N * 1);
+    cudaMalloc((void**)&d_C1_kernel, sizeof(float) * K * K * D1);
+    cudaMalloc((void**)&d_C1_data, sizeof(float) * N1 * N1 * D1);
+    cudaMalloc((void**)&d_S1_data, sizeof(float) * N2 * N2 * D1);
     
     // Copie des valeurs des matrices initialisées sur le CPU dans leur homonyme GPU
-    cudaMemcpy(d_raw_data, raw_data, sizeof(float) * 32 * 32 * 1, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C1_kernel, C1_kernel, sizeof(float) * 5 * 5 * 6, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C1_data, C1_data, sizeof(float) * 28 * 28 * 6, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_S1_data, S1_data, sizeof(float) * 14 * 14 * 6, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_raw_data, raw_data, sizeof(float) * N * N * 1, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_C1_kernel, C1_kernel, sizeof(float) * K * K * D1, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_C1_data, C1_data, sizeof(float) * N1 * N1 * D1, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_S1_data, S1_data, sizeof(float) * N2 * N2 * D1, cudaMemcpyHostToDevice);
   
-    dim3 block_size(28, 1, 1);
-    dim3 grid_size(28, 1, 1);
+    dim3 block_size(N1, 1, 1);
+    dim3 grid_size(N1, 1, 1);
 
-    dim3 grid_size2(28, 28, 6);
+    dim3 grid_size2(N1, N1, D1);
     
-    cudaConv2D<<<grid_size2, 1>>>(d_raw_data, d_C1_kernel, d_C1_data, 32, 5);
-    cudaDeviceSynchronize();
+    cudaConv2D<<<grid_size2, 1>>>(d_raw_data, d_C1_kernel, d_C1_data, N, K);
+    //
     
-    cudaTanh<<<grid_size, block_size>>>(d_C1_data, 28, 28, 6);
-    cudaDeviceSynchronize();
+    cudaTanh<<<grid_size2, 1>>>(d_C1_data, N1, N1, D1);
+    //
     
-    cudaMeanPool<<<grid_size, block_size>>>(d_C1_data, d_S1_data, 28, 28, 6, 2, 14, 14);
-    cudaDeviceSynchronize();
+    cudaMeanPool<<<grid_size, block_size>>>(d_C1_data, d_S1_data, N1, N1, D1, 2, N2, N2);
+    //
     
     
     // Copie des résultats sur CPU
-    cudaMemcpy(C1_data, d_C1_data, sizeof(float) * 28 * 28 * 6, cudaMemcpyDeviceToHost);
-    cudaMemcpy(S1_data, d_S1_data, sizeof(float) * 14 * 14 * 6, cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize();
+    cudaMemcpy(C1_data, d_C1_data, sizeof(float) * N1 * N1 * D1, cudaMemcpyDeviceToHost);
+    cudaMemcpy(S1_data, d_S1_data, sizeof(float) * N2 * N2 * D1, cudaMemcpyDeviceToHost);
+    
     
     // Affichage de la matrice résultat
     printf("\nMatrice de base raw_data:");
-    MatrixPrint2D(raw_data, 32, 32);
+    MatrixPrint2D(raw_data, N, N);
     printf("Noyau de convolution C1_kernel:");
-    MatrixPrint2D(C1_kernel, 5, 5);
+    MatrixPrint2D(C1_kernel, K, K);
     printf("Matrice résultante de la convolution et de la fonction d'activation:");
-    MatrixPrint3D(C1_data, 28, 28, 6);
+    MatrixPrint2D(C1_data, N1, N1);
     printf("Matrice résultante du MeanPooling:");
-    MatrixPrint2D(S1_data, 14, 14);
+    MatrixPrint2D(S1_data, N2, N2);
     
     cudaFree(d_raw_data);
     cudaFree(d_C1_kernel);
