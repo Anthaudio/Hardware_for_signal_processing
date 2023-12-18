@@ -2,30 +2,24 @@
 Anthony Gallien et Maéva Bachelard
 
 
-**>>>>>>> LES OBJECTIFS DE CE PROJET <<<<<<<**
+# Projet CUDA avec Implémentation LeNet-5
 
-**>>>>> Apprendre à utiliser CUDA**
-Ce premier objectif est essentiel pour tout projet utilisant CUDA. Il s'agit d'apprendre les bases de la programmation GPU, notamment la syntaxe CUDA, les concepts de parallélisme et les différentes techniques d'accélération.
+## Objectifs
+Ce projet vise à atteindre plusieurs objectifs afin d'approfondir les connaissances et compétences liées à l'utilisation de CUDA, l'étude de la complexité des algorithmes, et l'accélération obtenue sur GPU par rapport à une exécution sur CPU. Les principaux objectifs comprennent :
 
-**>>>>> Etudier la complexité d'algorithmes et l'accélération obtenue sur GPU par rapport à une exécution sur CPU**
-Ce deuxième objectif permet de comprendre les avantages de l'utilisation d'un GPU pour l'exécution d'algorithmes complexes ou des calculs avec de très grande dimension. 
+1. **Apprentissage de CUDA :** Acquérir une compréhension approfondie de l'utilisation de CUDA pour l'accélération des calculs parallèles sur GPU.
 
-**>>>>> Observer les limites de l'utilisation d'un GPU**
-Ce troisième objectif est important pour éviter les pièges de l'utilisation d'un GPU. Il s'agit d'observer les limites de l'utilisation d'un GPU, notamment la taille des données, la complexité des algorithmes et la disponibilité des ressources.
+2. **Étude de la complexité des algorithmes :** Analyser la complexité des algorithmes, en mettant particulièrement l'accent sur les gains d'accélération observés lors de l'exécution sur GPU par rapport à CPU.
 
-**>>>>> Implémenter "from scratch" un CNN**
-Ce quatrième objectif permet de développer une compréhension approfondie des algorithmes de Deep Learning. Il s'agit d'implémenter un CNN, un type d'algorithme de Deep Learning couramment utilisé pour la vision par ordinateur.
+3. **Observation des limites du GPU :** Explorer les limites et les contraintes associées à l'utilisation d'un GPU, en particulier dans le contexte des tâches liées à l'apprentissage profond.
 
-**>>>>> Exporter des données depuis un notebook python et les réimporter dans un projet cuda**
-Ce cinquième objectif permet de maîtriser les techniques de transfert de données entre CPU et GPU. Il s'agit d'exporter des données depuis un notebook Python et de les réimporter dans un projet CUDA.
+4. **Implémentation d'un CNN (Convolutional Neural Network) :**
+   - Concevoir et mettre en œuvre "from scratch" la partie d'inférence d'un CNN.
+   - Choix du CNN : LeNet-5, une architecture classique largement reconnue pour son efficacité dans la reconnaissance d'images.
 
-**>>>>> Faire un suivi de votre projet et du versionning grâce à l'outil git**
-Ce dernier objectif est important pour maintenir un projet en bon état. Il s'agit de faire un suivi de votre projet et du versionning grâce à l'outil Git.
+5. **Interopérabilité entre Python et CUDA :** Exporter des données depuis un notebook Python et les réimporter dans un projet CUDA, assurant une intégration fluide entre les phases de développement.
 
-**2. Partie 1 - Prise en main de Cuda : Multiplication de matrices**
+6. **Gestion de projet avec Git :** Mettre en place un suivi de projet efficace en utilisant l'outil Git pour le versionning, facilitant la collaboration et le suivi des changements.
 
-**>>>>> Création d'une matrice sur CPU**
-On initialise une matrice de taille n x p avec des valeurs aléatoires entre -1 et 1.
 
-**>>>>> Affichage d'une matrice sur CPU**
-On affiche ligne par ligne une matrice de taille n x p.
+
