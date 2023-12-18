@@ -115,7 +115,10 @@ int main(){
     cudaMemcpy(d_M, M, sizeof(float) * n * p, cudaMemcpyHostToDevice);
     cudaMemcpy(d_M2, M2, sizeof(float) * n * p, cudaMemcpyHostToDevice);
 
-    dim3 grid_size(n, n, 1);
+    dim3 grid_size(n, 1, 1); // Les grid_size et block_size pour l'addition
+    dim3 block_size(p, 1, 1);
+    
+    dim3 grid_size(n, n, 1); // Les grid_size et block_size pour la multiplication
     dim3 block_size(p, p, 1);
     
 
@@ -126,7 +129,7 @@ int main(){
     cudaMemcpy(Mout, d_Mout, sizeof(float) * n * p, cudaMemcpyDeviceToHost);
     //MatrixPrint(Mout, n, p);
 
-    cudaMatrixMult<<<grid_size, block_size>>>(d_M, d_M2, d_Mout, n, p);
+    cudaMatrixMult<<<grid_size, block_size>>>(d_M, d_M2, d_Mout, n, p); 
 
     cudaMemcpy(M, d_M, sizeof(float) * n * p, cudaMemcpyDeviceToHost);
     cudaMemcpy(M2, d_M2, sizeof(float) * n * p, cudaMemcpyDeviceToHost);
