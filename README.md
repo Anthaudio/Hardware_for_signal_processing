@@ -71,3 +71,20 @@ Dans le cadre de l'implémentation d'une opération de Convolution 2D, les matri
 
 4. **Fonction d'activation**
 - On ajoute la fonction tanh en fin de couche commme fonction d'activation.
+
+
+# Un peu de Python
+
+
+**Notebook Python**
+Nous utilisons le notebook Python fournis dans le sujet pour finaliser notre réseau LeNet5 ainsi que pour l'entrainer. En l'entraînant rapidement, nous obtenons les valeurs optimales des poids pour chaque couche, nous gardons ces poids en les enregistrants dans des fichier .h5. Cela nous permet d'initialiser les noyaux de convolution et les poids des couches fully connected pour obtenir les meilleurs résultats.
+
+**Création des fonctions manquantes**
+Nous construisons le réseau en ajoutant des couches de convolution et de MeanPooling grâce ux fonctions précédentes. De plus, nous créons une couche Dense (fully connected layer) sur le GPU, impliquant les opérations de multiplication et d'addition et également Flatten afin de transformer une matrice en un vecteur.
+
+  On créera de cette manière un model possédant en python cette forme :
+  ![image](https://github.com/Anthaudio/Hardware_for_signal_processing/assets/117726167/c9e11a60-f12a-40d9-8480-d8e12847a8d0)
+
+
+
+
