@@ -63,13 +63,13 @@ Dans le cadre de l'implémentation d'une opération de Convolution 2D, les matri
 **Matrice `C1_kernel` de Taille 6x5x5 :**
    - Une matrice float `C1_kernel` de taille 6x5x5 est initialisée avec des valeurs comprises entre 0 et 1, correspondant à nos premiers noyaux de convolution.
 
-2. **Layer 2 - Convolution 2D :**
+**Layer 2 - Convolution 2D :**
    - Convolution avec 6 noyaux de convolution de taille 5x5. La taille résultantes est donc de 6x28x28.
 
-3. **Layer 3 - Sous-échantillonage**
+**Layer 3 - Sous-échantillonage**
 - Sous-échantillonnage d'un facteur 2. La taille résultantes des données est donc de 6x14x14.
 
-4. **Fonction d'activation**
+**Fonction d'activation**
 - On ajoute la fonction tanh en fin de couche commme fonction d'activation.
 
 
