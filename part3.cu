@@ -6,7 +6,6 @@
 
 
 
-// Layer 1 
 /*
  La fonction suivante initialise une matrice de taille NxP selon différentes options :
     - Si type == 0, initialise la matrice avec des zéros.
@@ -77,8 +76,6 @@ void MatrixPrint3D(float *M, int n, int p, int l){
 }
 
 
-// Layer 2
-
 /*
 La fonction cudaConv2D ci-dessous réalise la convolution de la matrice M avec nb_kernel noyaux de convolution, chacun ayant une taille de kernel_size x kernel_size. Les paramètres de la fonction sont les suivants :
 
@@ -116,8 +113,6 @@ __global__ void cudaConv2D(float *input, float *kernels, float *output, int inpu
     output[outputIdx] = sum;
 }
 
-
-// Layer 3  
 
 /*
   La fonction suivante effectue le MeanPool de la matrice d'entrée M par un kernel 2x2.
@@ -196,12 +191,10 @@ __global__ void cudaTanh(float* M, int M_ligne, int M_colonne, int M_prof) {
 
 
 
-// Layer 4 - Dense | Linear
 
 /*
-*** Function Name : cudaMatrixMultGeneral ***
 
-Sert à effectuer la multiplication matricielle (dot) d'une matrice NxP avec une matrice PxM sur le GPU
+La fonction suivante sert à effectuer la multiplication matricielle (dot) d'une matrice NxP avec une matrice PxM sur le GPU
 
 Paramètres : 
     n : nombre de lignes de la matrice M1
@@ -234,9 +227,8 @@ __device__ float* cudaMatrixMultGeneral(float *M1, float *M2, float *Mout, int n
 
 
 /*
-*** Function Name : cudaMatrixAdd ***
 
-Sert à additionner deux matrices de même taille NxP sur le GPU 
+La fonction suivante sert à additionner deux matrices de même taille NxP sur le GPU 
 
 Paramètres : 
     n : nombre de lignes des matrice,
@@ -268,6 +260,33 @@ __global__ void cudaDense(float* d_M, float* d_Mout, float* d_W, float* d_b, int
     d_Mout = cudaMatrixAdd(d_Mout, d_b, d_Mout, n, m);
     
 }
+
+
+/*
+La fonction cudaFlattenKernel effectue l'aplatissement d'une matrice 2D en un tableau unidimensionnel.
+   
+Paramètres :
+    flattenedArray : pointeur vers le tableau unidimensionnel résultant, alloué sur le GPU,
+    matrix : pointeur vers la matrice 2D à aplatir, allouée sur le GPU,
+    rows : nombre de lignes de la matrice,
+    cols : nombre de colonnes de la matrice.
+   
+Chaque thread CUDA unique est responsable de copier les éléments d'une matrice 2D dans le tableau unidimensionnel.
+La variable tid (thread ID) est calculée en utilisant les indices de bloc (blockIdx.x) et de thread (threadIdx.x).
+L'indice du tableau unidimensionnel est mis à jour en conséquence, et les éléments de la matrice sont copiés dans le tableau.
+*/
+__global__ void cudaFlatten(float* flattenedArray, float** matrix, int rows, int cols) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    // Aplatir la matrice en un tableau unidimensionnel
+    int index = 0;
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            flattenedArray[tid * (rows * cols) + index++] = matrix[i][j];
+        }
+    }
+}
+
 
 // Fonction main
 int main(){
@@ -362,6 +381,9 @@ int main(){
     dim3 grid_size(1,1);
 
     dim3 grid_size2(N1, N1, D1);
+
+    dim3 grid_size_flatten(N2, N2, D1);
+    dim3 block_size_flatten(32, 32);
     
     cudaConv2D<<<grid_size2, 1>>>(d_raw_data, d_C1_kernel, d_C1_data, 32, 28);
     
@@ -380,9 +402,27 @@ int main(){
     
     cudaMeanPool<<<grid_size, block_size>>>(d_C2_data, d_S2_data, 10, 10, 16, 2, 5, 5);
     
-    
-//    cudaDense<<<grid_size, block_size>>>(d_C2_data, d_D1_data, d_W1_kernel, d_B1_kernel, 1, 400, 120);
-//    cudaDeviceSynchronize();
+
+    cudaFlatten<<<grid_size_flatten, block_size_flatten>>>(d_S2_data, d_D1_data, 5, 5);
+
+
+    cudaDense<<<grid_size, block_size>>>(d_C2_data, d_D1_data, d_W1_kernel, d_B1_kernel, 1, 400, 120);
+
+
+    cudaTanh
+
+
+    cudaDense(120-->84)
+
+
+    cudaTanh
+
+
+    cudaDense(84-->10)
+
+
+    cudaSoftMax
+
     
     
     // Copie des résultats sur CPU
